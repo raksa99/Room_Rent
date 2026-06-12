@@ -1,0 +1,14 @@
+{
+  "name": "room-rental-system",
+  "version": "1.0.0",
+  "description": "Room Rental Management System Full Stack Application",
+  "scripts": {
+    "backend": "npm --prefix backend start",
+    "frontend": "npm --prefix frontend start",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "seed": "npm --prefix backend run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

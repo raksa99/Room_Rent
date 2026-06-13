@@ -76,424 +76,529 @@
       </div>
     </div>
 
-    <!-- Header Section -->
-    <div class="text-center">
-      <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-400 sm:text-5xl">
-        {{ t['title'][currentLang] }}
-      </h1>
-      <p 
-        [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-        class="mt-3 text-lg max-w-2xl mx-auto transition-colors duration-300"
-      >
-        {{ t['subtitle'][currentLang] }}
-      </p>
-    </div>
+    <ng-container *ngIf="!showSuccessView">
+      <!-- Header Section -->
+      <div class="text-center">
+        <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-400 sm:text-5xl">
+          {{ t['title'][currentLang] }}
+        </h1>
+        <p 
+          [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+          class="mt-3 text-lg max-w-2xl mx-auto transition-colors duration-300"
+        >
+          {{ t['subtitle'][currentLang] }}
+        </p>
+      </div>
 
-    <!-- Main Content Layout Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      
-      <!-- Room Grid Selector Container -->
-      <div 
-        [ngClass]="isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-xl shadow-slate-100/50'"
-        class="lg:col-span-2 space-y-6 rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300"
-      >
+      <!-- Main Content Layout Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Room Grid Selector Container -->
         <div 
-          [ngClass]="isDarkMode ? 'border-slate-800' : 'border-slate-100'"
-          class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-3 transition-colors duration-300"
+          [ngClass]="isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-xl shadow-slate-100/50'"
+          class="lg:col-span-2 space-y-6 rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300"
+        >
+          <div 
+            [ngClass]="isDarkMode ? 'border-slate-800' : 'border-slate-100'"
+            class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-3 transition-colors duration-300"
+          >
+            <h3 
+              [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'"
+              class="text-xl font-bold transition-colors duration-300"
+            >
+              {{ t['selectRoomTitle'][currentLang] }}
+            </h3>
+            
+            <!-- Legend Indicators -->
+            <div 
+              [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+              class="flex space-x-4 text-xs font-semibold transition-colors duration-300"
+            >
+              <span class="flex items-center gap-1.5">
+                <span [ngClass]="isDarkMode ? 'bg-amber-500/20 border-amber-500/50' : 'bg-amber-50 border-amber-300'" class="w-3 h-3 rounded border"></span>
+                {{ t['available'][currentLang] }}
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span [ngClass]="isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300'" class="w-3 h-3 rounded border"></span>
+                {{ t['booked'][currentLang] }}
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span [ngClass]="isDarkMode ? 'bg-rose-500/20 border-rose-500/50' : 'bg-rose-50 border-rose-300'" class="w-3 h-3 rounded border"></span>
+                {{ t['maintenance'][currentLang] }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Room Cards Grid (Rooms 1 to 27) -->
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            <button 
+              *ngFor="let room of rooms" 
+              (click)="selectRoom(room)"
+              [disabled]="room.status !== 'AVAILABLE'"
+              [ngClass]="{
+                'bg-amber-500/10 border-amber-500/40 hover:border-amber-400 hover:bg-amber-500/20 text-amber-400': room.status === 'AVAILABLE' && selectedRoom?.id !== room.id && isDarkMode,
+                'bg-amber-50 border-amber-300 text-amber-700 hover:border-amber-500 hover:bg-amber-100': room.status === 'AVAILABLE' && selectedRoom?.id !== room.id && !isDarkMode,
+                'bg-amber-500 border-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105': selectedRoom?.id === room.id,
+                'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed': room.status === 'BOOKED' && isDarkMode,
+                'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed': room.status === 'BOOKED' && !isDarkMode,
+                'bg-rose-500/10 border-rose-500/30 text-rose-400/80 cursor-not-allowed': room.status === 'MAINTENANCE' && isDarkMode,
+                'bg-rose-50 border-rose-200 text-rose-600 cursor-not-allowed': room.status === 'MAINTENANCE' && !isDarkMode
+              }"
+              class="flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 focus:outline-none"
+            >
+              <span 
+                [ngClass]="selectedRoom?.id === room.id ? 'text-slate-950' : (isDarkMode ? 'text-slate-400' : 'text-slate-500')"
+                class="text-[10px] font-bold tracking-wider transition-colors duration-300 uppercase"
+              >
+                {{ t['roomLabel'][currentLang] }}
+              </span>
+              <span class="text-lg font-bold">{{ room.roomNumber }}</span>
+              <span class="text-[10px] mt-1 uppercase font-bold px-1.5 py-0.5 rounded transition-all duration-300"
+                    [ngClass]="{
+                      'bg-amber-500/20 text-amber-300': room.status === 'AVAILABLE' && isDarkMode && selectedRoom?.id !== room.id,
+                      'bg-amber-100 text-amber-700': room.status === 'AVAILABLE' && !isDarkMode && selectedRoom?.id !== room.id,
+                      'bg-slate-950 text-slate-500': room.status === 'BOOKED' && isDarkMode,
+                      'bg-slate-200 text-slate-400': room.status === 'BOOKED' && !isDarkMode,
+                      'bg-rose-500/20 text-rose-300': room.status === 'MAINTENANCE' && isDarkMode,
+                      'bg-rose-100 text-rose-700': room.status === 'MAINTENANCE' && !isDarkMode,
+                      'bg-slate-950/20 text-amber-950 font-extrabold': selectedRoom?.id === room.id
+                    }">
+                {{ t[room.type][currentLang] }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Reactive Form Component Block -->
+        <div 
+          [ngClass]="isDarkMode ? 'from-slate-900 to-slate-950 border-slate-800' : 'from-white to-slate-50 border-slate-200 shadow-xl shadow-slate-100/50'"
+          class="bg-gradient-to-b border rounded-3xl p-6 space-y-6 transition-all duration-300"
         >
           <h3 
-            [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'"
-            class="text-xl font-bold transition-colors duration-300"
+            [ngClass]="isDarkMode ? 'text-slate-100' : 'text-slate-800'"
+            class="text-xl font-bold flex items-center gap-2 transition-colors duration-300"
           >
-            {{ t['selectRoomTitle'][currentLang] }}
+            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            {{ t['bookingInfoTitle'][currentLang] }}
           </h3>
-          
-          <!-- Legend Indicators -->
-          <div 
-            [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-            class="flex space-x-4 text-xs font-semibold transition-colors duration-300"
-          >
-            <span class="flex items-center gap-1.5">
-              <span [ngClass]="isDarkMode ? 'bg-amber-500/20 border-amber-500/50' : 'bg-amber-50 border-amber-300'" class="w-3 h-3 rounded border"></span>
-              {{ t['available'][currentLang] }}
-            </span>
-            <span class="flex items-center gap-1.5">
-              <span [ngClass]="isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300'" class="w-3 h-3 rounded border"></span>
-              {{ t['booked'][currentLang] }}
-            </span>
-            <span class="flex items-center gap-1.5">
-              <span [ngClass]="isDarkMode ? 'bg-rose-500/20 border-rose-500/50' : 'bg-rose-50 border-rose-300'" class="w-3 h-3 rounded border"></span>
-              {{ t['maintenance'][currentLang] }}
-            </span>
-          </div>
-        </div>
 
-        <!-- Room Cards Grid (Rooms 1 to 27) -->
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          <button 
-            *ngFor="let room of rooms" 
-            (click)="selectRoom(room)"
-            [disabled]="room.status !== 'AVAILABLE'"
-            [ngClass]="{
-              'bg-amber-500/10 border-amber-500/40 hover:border-amber-400 hover:bg-amber-500/20 text-amber-400': room.status === 'AVAILABLE' && selectedRoom?.id !== room.id && isDarkMode,
-              'bg-amber-50 border-amber-300 text-amber-700 hover:border-amber-500 hover:bg-amber-100': room.status === 'AVAILABLE' && selectedRoom?.id !== room.id && !isDarkMode,
-              'bg-amber-500 border-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 scale-105': selectedRoom?.id === room.id,
-              'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed': room.status === 'BOOKED' && isDarkMode,
-              'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed': room.status === 'BOOKED' && !isDarkMode,
-              'bg-rose-500/10 border-rose-500/30 text-rose-400/80 cursor-not-allowed': room.status === 'MAINTENANCE' && isDarkMode,
-              'bg-rose-50 border-rose-200 text-rose-600 cursor-not-allowed': room.status === 'MAINTENANCE' && !isDarkMode
-            }"
-            class="flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 focus:outline-none"
-          >
-            <span 
-              [ngClass]="selectedRoom?.id === room.id ? 'text-slate-950' : (isDarkMode ? 'text-slate-400' : 'text-slate-500')"
-              class="text-[10px] font-bold tracking-wider transition-colors duration-300 uppercase"
-            >
-              {{ t['roomLabel'][currentLang] }}
-            </span>
-            <span class="text-lg font-bold">{{ room.roomNumber }}</span>
-            <span class="text-[10px] mt-1 uppercase font-bold px-1.5 py-0.5 rounded transition-all duration-300"
+          <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="space-y-4">
+            <!-- Room Selection Widget -->
+            <div>
+              <label 
+                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                class="block text-xs font-semibold uppercase tracking-wider mb-2 transition-colors duration-300"
+              >
+                {{ t['selectedRoomLabel'][currentLang] }}
+              </label>
+              <div 
+                *ngIf="selectedRoom; else noRoomSelected" 
+                [ngClass]="isDarkMode ? 'bg-amber-500/10 border-amber-500/30' : 'bg-amber-50 border-amber-200'"
+                class="flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300"
+              >
+                <div>
+                  <span 
+                    [ngClass]="isDarkMode ? 'text-amber-400' : 'text-amber-700'"
+                    class="text-lg font-bold transition-colors duration-300"
+                  >
+                    {{ t['roomLabel'][currentLang] }} {{ selectedRoom?.roomNumber }}
+                  </span>
+                  <span 
+                    [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                    class="text-xs block transition-colors duration-300"
+                  >
+                    {{ currentLang === 'en' ? t[selectedRoom.type][currentLang] + ' ' + t['categorySuffix'][currentLang] : t['categorySuffix'][currentLang] + ' ' + t[selectedRoom.type][currentLang] }}
+                  </span>
+                </div>
+                <div class="text-right">
+                  <span 
+                    [ngClass]="isDarkMode ? 'text-white' : 'text-slate-900'"
+                    class="text-lg font-extrabold transition-colors duration-300"
+                  >
+                    ${{ selectedRoom?.price }}
+                  </span>
+                  <span 
+                    [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                    class="text-xs block transition-colors duration-300"
+                  >
+                    / {{ t['monthSuffix'][currentLang] }}
+                  </span>
+                </div>
+              </div>
+              <ng-template #noRoomSelected>
+                <div 
+                  [ngClass]="isDarkMode ? 'bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-500'"
+                  class="p-4 border border-dashed rounded-2xl text-center text-sm transition-all duration-300"
+                >
+                  {{ t['selectRoomPrompt'][currentLang] }}
+                </div>
+              </ng-template>
+              <!-- Error helper -->
+              <p *ngIf="bookingForm.get('roomId')?.touched && bookingForm.get('roomId')?.errors?.['required']" class="text-xs text-rose-500 mt-1">
+                {{ t['roomRequired'][currentLang] }}
+              </p>
+            </div>
+
+            <!-- National ID Card Photo Scan Section -->
+            <div>
+              <label 
+                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                class="block text-xs font-semibold uppercase tracking-wider mb-2 transition-colors duration-300"
+              >
+                {{ t['nationalIdLabel'][currentLang] }}
+              </label>
+              
+              <!-- ID Photo Control Bar -->
+              <div class="flex gap-2">
+                <button 
+                  type="button" 
+                  (click)="startCamera()" 
+                  [disabled]="showCamera"
                   [ngClass]="{
-                    'bg-amber-500/20 text-amber-300': room.status === 'AVAILABLE' && isDarkMode && selectedRoom?.id !== room.id,
-                    'bg-amber-100 text-amber-700': room.status === 'AVAILABLE' && !isDarkMode && selectedRoom?.id !== room.id,
-                    'bg-slate-950 text-slate-500': room.status === 'BOOKED' && isDarkMode,
-                    'bg-slate-200 text-slate-400': room.status === 'BOOKED' && !isDarkMode,
-                    'bg-rose-500/20 text-rose-300': room.status === 'MAINTENANCE' && isDarkMode,
-                    'bg-rose-100 text-rose-700': room.status === 'MAINTENANCE' && !isDarkMode,
-                    'bg-slate-950/20 text-amber-950 font-extrabold': selectedRoom?.id === room.id
-                  }">
-              {{ t[room.type][currentLang] }}
-            </span>
-          </button>
-        </div>
-      </div>
+                    'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-amber-400': isDarkMode,
+                    'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-amber-600': !isDarkMode
+                  }"
+                  class="flex-1 disabled:opacity-50 font-semibold py-2 px-3 rounded-xl transition duration-200 text-xs flex items-center justify-center gap-1.5 border"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  {{ t['scanCamera'][currentLang] }}
+                </button>
 
-      <!-- Reactive Form Component Block -->
-      <div 
-        [ngClass]="isDarkMode ? 'from-slate-900 to-slate-950 border-slate-800' : 'from-white to-slate-50 border-slate-200 shadow-xl shadow-slate-100/50'"
-        class="bg-gradient-to-b border rounded-3xl p-6 space-y-6 transition-all duration-300"
-      >
-        <h3 
-          [ngClass]="isDarkMode ? 'text-slate-100' : 'text-slate-800'"
-          class="text-xl font-bold flex items-center gap-2 transition-colors duration-300"
-        >
-          <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          {{ t['bookingInfoTitle'][currentLang] }}
-        </h3>
+                <label 
+                  [ngClass]="{
+                    'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-amber-400': isDarkMode,
+                    'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-amber-600': !isDarkMode
+                  }"
+                  class="flex-1 cursor-pointer font-semibold py-2 px-3 rounded-xl transition duration-200 text-xs flex items-center justify-center gap-1.5 text-center border"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  {{ t['importImage'][currentLang] }}
+                  <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+                </label>
+              </div>
 
-        <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="space-y-4">
-          <!-- Room Selection Widget -->
-          <div>
-            <label 
-              [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-              class="block text-xs font-semibold uppercase tracking-wider mb-2 transition-colors duration-300"
-            >
-              {{ t['selectedRoomLabel'][currentLang] }}
-            </label>
-            <div 
-              *ngIf="selectedRoom; else noRoomSelected" 
-              [ngClass]="isDarkMode ? 'bg-amber-500/10 border-amber-500/30' : 'bg-amber-50 border-amber-200'"
-              class="flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300"
-            >
+              <!-- Webcam Streaming Box -->
+              <div 
+                *ngIf="showCamera" 
+                [ngClass]="isDarkMode ? 'border-amber-500/30 bg-slate-950' : 'border-amber-500/50 bg-slate-900'"
+                class="relative rounded-2xl overflow-hidden border mt-3 aspect-video transition-all duration-300"
+              >
+                <video #videoElement autoplay playsinline class="w-full h-full object-cover bg-black"></video>
+                <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-2 px-3">
+                  <button 
+                    type="button" 
+                    (click)="capturePhoto()" 
+                    class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-amber-500/20 focus:outline-none"
+                  >
+                    {{ t['capturePhoto'][currentLang] }}
+                  </button>
+                  <button 
+                    type="button" 
+                    (click)="stopCamera()" 
+                    [ngClass]="isDarkMode ? 'bg-slate-900/95 hover:bg-slate-800/95 border-slate-800 text-white' : 'bg-slate-100/95 hover:bg-slate-200/95 border-slate-300 text-slate-800'"
+                    class="border px-4 py-2 rounded-xl font-bold text-xs focus:outline-none transition"
+                  >
+                    {{ t['cancel'][currentLang] }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Captured / Imported Preview -->
+              <div 
+                *ngIf="idCardImagePreview" 
+                [ngClass]="isDarkMode ? 'border-slate-800 bg-slate-900/60 text-slate-400' : 'border-slate-200 bg-slate-100/60 text-slate-600'"
+                class="relative rounded-2xl overflow-hidden border mt-3 p-1.5 flex flex-col items-center transition-all duration-300"
+              >
+                <img [src]="idCardImagePreview" class="rounded-xl max-h-40 object-contain w-full bg-black/40" />
+                <button 
+                  type="button" 
+                  (click)="removePhoto()" 
+                  class="absolute top-3 right-3 bg-rose-500/90 hover:bg-rose-500 text-white p-1.5 rounded-lg transition duration-200 shadow focus:outline-none"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                <span 
+                  [ngClass]="isDarkMode ? 'text-slate-500' : 'text-slate-600'"
+                  class="text-[10px] mt-1.5 uppercase tracking-wider font-semibold"
+                >
+                  {{ t['idRegistered'][currentLang] }}
+                </span>
+              </div>
+
+              <!-- Validation Error -->
+              <div *ngIf="(bookingForm.get('nationalIdImage')?.touched || isSubmitted) && bookingForm.get('nationalIdImage')?.invalid" class="text-xs text-rose-500 mt-2">
+                {{ t['idRequired'][currentLang] }}
+              </div>
+            </div>
+
+            <!-- Phone Number Field -->
+            <div>
+              <label 
+                for="phoneNumber" 
+                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                class="block text-xs font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300"
+              >
+                {{ t['phoneLabel'][currentLang] }}
+              </label>
+              <div 
+                [ngClass]="{
+                  'bg-slate-900/80 border-slate-800 focus-within:border-amber-500 focus-within:ring-amber-500': isDarkMode,
+                  'bg-white border-slate-200 focus-within:border-amber-500 focus-within:ring-amber-500 shadow-sm': !isDarkMode,
+                  'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500': (bookingForm.get('phoneNumber')?.touched || isSubmitted) && bookingForm.get('phoneNumber')?.invalid
+                }"
+                class="flex rounded-2xl border overflow-hidden focus-within:ring-1 transition-all duration-300"
+              >
+                <span 
+                  [ngClass]="isDarkMode ? 'text-slate-400 bg-slate-900 border-slate-800/60' : 'text-slate-500 bg-slate-50 border-slate-200'"
+                  class="flex items-center pl-4 pr-2.5 font-bold text-sm select-none border-r transition-colors duration-300"
+                >
+                  +885
+                </span>
+                <input 
+                  type="tel" 
+                  id="phoneNumber" 
+                  formControlName="phoneNumber"
+                  placeholder="e.g., 99123456"
+                  [ngClass]="isDarkMode ? 'text-slate-100 placeholder-slate-600' : 'text-slate-900 placeholder-slate-400'"
+                  class="w-full bg-transparent px-3 py-3 focus:outline-none text-sm transition-colors duration-300"
+                />
+              </div>
+              <div *ngIf="(bookingForm.get('phoneNumber')?.touched || isSubmitted) && bookingForm.get('phoneNumber')?.invalid" class="text-xs text-rose-500 mt-1">
+                <span *ngIf="bookingForm.get('phoneNumber')?.errors?.['required']">{{ t['phoneRequired'][currentLang] }}</span>
+                <span *ngIf="bookingForm.get('phoneNumber')?.errors?.['pattern']">{{ t['phonePattern'][currentLang] }}</span>
+              </div>
+            </div>
+
+            <!-- Dates Selection Grid -->
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Rent Date (Start) -->
               <div>
-                <span 
-                  [ngClass]="isDarkMode ? 'text-amber-400' : 'text-amber-700'"
-                  class="text-lg font-bold transition-colors duration-300"
-                >
-                  {{ t['roomLabel'][currentLang] }} {{ selectedRoom?.roomNumber }}
-                </span>
-                <span 
+                <label 
+                  for="rentDate" 
                   [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-                  class="text-xs block transition-colors duration-300"
+                  class="block text-xs font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300"
                 >
-                  {{ currentLang === 'en' ? t[selectedRoom.type][currentLang] + ' ' + t['categorySuffix'][currentLang] : t['categorySuffix'][currentLang] + ' ' + t[selectedRoom.type][currentLang] }}
-                </span>
+                  {{ t['rentDateLabel'][currentLang] }}
+                </label>
+                <div 
+                  (click)="triggerDatePicker(rentDatePicker)"
+                  [ngClass]="{
+                    'bg-slate-900/80 border-slate-800 focus-within:border-amber-500 focus-within:ring-amber-500': isDarkMode,
+                    'bg-white border-slate-200 focus-within:border-amber-500 focus-within:ring-amber-500 shadow-sm': !isDarkMode,
+                    'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500': (bookingForm.get('rentDate')?.touched || isSubmitted) && bookingForm.get('rentDate')?.invalid
+                  }"
+                  class="flex items-center rounded-2xl border overflow-hidden focus-within:ring-1 transition-all duration-300 cursor-pointer"
+                >
+                  <span class="pl-3.5 text-slate-500 select-none flex items-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </span>
+                  <input 
+                    type="date" 
+                    #rentDatePicker
+                    id="rentDate" 
+                    [min]="minDate"
+                    formControlName="rentDate"
+                    [ngClass]="{
+                      'text-slate-100 [color-scheme:dark]': isDarkMode,
+                      'text-slate-900 [color-scheme:light]': !isDarkMode
+                    }"
+                    class="relative w-full bg-transparent pl-2 pr-3 py-3 focus:outline-none text-sm cursor-pointer transition-colors duration-300"
+                  />
+                </div>
+                <div *ngIf="(bookingForm.get('rentDate')?.touched || isSubmitted) && bookingForm.get('rentDate')?.invalid" class="text-xs text-rose-500 mt-1">
+                  <span *ngIf="bookingForm.get('rentDate')?.errors?.['required']">{{ t['required'][currentLang] }}</span>
+                  <span *ngIf="bookingForm.get('rentDate')?.errors?.['pastDate']">{{ t['pastDateError'][currentLang] }}</span>
+                </div>
               </div>
-              <div class="text-right">
-                <span 
-                  [ngClass]="isDarkMode ? 'text-white' : 'text-slate-900'"
-                  class="text-lg font-extrabold transition-colors duration-300"
-                >
-                  ${{ selectedRoom?.price }}
-                </span>
-                <span 
+
+              <!-- Left Date (End) -->
+              <div>
+                <label 
+                  for="leftDate" 
                   [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-                  class="text-xs block transition-colors duration-300"
+                  class="block text-xs font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300"
                 >
-                  / {{ t['monthSuffix'][currentLang] }}
-                </span>
-              </div>
-            </div>
-            <ng-template #noRoomSelected>
-              <div 
-                [ngClass]="isDarkMode ? 'bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-500'"
-                class="p-4 border border-dashed rounded-2xl text-center text-sm transition-all duration-300"
-              >
-                {{ t['selectRoomPrompt'][currentLang] }}
-              </div>
-            </ng-template>
-            <!-- Error helper -->
-            <p *ngIf="bookingForm.get('roomId')?.touched && bookingForm.get('roomId')?.errors?.['required']" class="text-xs text-rose-500 mt-1">
-              {{ t['roomRequired'][currentLang] }}
-            </p>
-          </div>
-
-          <!-- National ID Card Photo Scan Section -->
-          <div>
-            <label 
-              [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-              class="block text-xs font-semibold uppercase tracking-wider mb-2 transition-colors duration-300"
-            >
-              {{ t['nationalIdLabel'][currentLang] }}
-            </label>
-            
-            <!-- ID Photo Control Bar -->
-            <div class="flex gap-2">
-              <button 
-                type="button" 
-                (click)="startCamera()" 
-                [disabled]="showCamera"
-                [ngClass]="{
-                  'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-amber-400': isDarkMode,
-                  'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-amber-600': !isDarkMode
-                }"
-                class="flex-1 disabled:opacity-50 font-semibold py-2 px-3 rounded-xl transition duration-200 text-xs flex items-center justify-center gap-1.5 border"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                {{ t['scanCamera'][currentLang] }}
-              </button>
-
-              <label 
-                [ngClass]="{
-                  'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-amber-400': isDarkMode,
-                  'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-amber-600': !isDarkMode
-                }"
-                class="flex-1 cursor-pointer font-semibold py-2 px-3 rounded-xl transition duration-200 text-xs flex items-center justify-center gap-1.5 text-center border"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                {{ t['importImage'][currentLang] }}
-                <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
-              </label>
-            </div>
-
-            <!-- Webcam Streaming Box -->
-            <div 
-              *ngIf="showCamera" 
-              [ngClass]="isDarkMode ? 'border-amber-500/30 bg-slate-950' : 'border-amber-500/50 bg-slate-900'"
-              class="relative rounded-2xl overflow-hidden border mt-3 aspect-video transition-all duration-300"
-            >
-              <video #videoElement autoplay playsinline class="w-full h-full object-cover bg-black"></video>
-              <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-2 px-3">
-                <button 
-                  type="button" 
-                  (click)="capturePhoto()" 
-                  class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-amber-500/20 focus:outline-none"
-                >
-                  {{ t['capturePhoto'][currentLang] }}
-                </button>
-                <button 
-                  type="button" 
-                  (click)="stopCamera()" 
-                  [ngClass]="isDarkMode ? 'bg-slate-900/95 hover:bg-slate-800/95 border-slate-800 text-white' : 'bg-slate-100/95 hover:bg-slate-200/95 border-slate-300 text-slate-800'"
-                  class="border px-4 py-2 rounded-xl font-bold text-xs focus:outline-none transition"
-                >
-                  {{ t['cancel'][currentLang] }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Captured / Imported Preview -->
-            <div 
-              *ngIf="idCardImagePreview" 
-              [ngClass]="isDarkMode ? 'border-slate-800 bg-slate-900/60 text-slate-400' : 'border-slate-200 bg-slate-100/60 text-slate-600'"
-              class="relative rounded-2xl overflow-hidden border mt-3 p-1.5 flex flex-col items-center transition-all duration-300"
-            >
-              <img [src]="idCardImagePreview" class="rounded-xl max-h-40 object-contain w-full bg-black/40" />
-              <button 
-                type="button" 
-                (click)="removePhoto()" 
-                class="absolute top-3 right-3 bg-rose-500/90 hover:bg-rose-500 text-white p-1.5 rounded-lg transition duration-200 shadow focus:outline-none"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              </button>
-              <span 
-                [ngClass]="isDarkMode ? 'text-slate-500' : 'text-slate-600'"
-                class="text-[10px] mt-1.5 uppercase tracking-wider font-semibold"
-              >
-                {{ t['idRegistered'][currentLang] }}
-              </span>
-            </div>
-
-            <!-- Validation Error -->
-            <div *ngIf="(bookingForm.get('nationalIdImage')?.touched || isSubmitted) && bookingForm.get('nationalIdImage')?.invalid" class="text-xs text-rose-500 mt-2">
-              {{ t['idRequired'][currentLang] }}
-            </div>
-          </div>
-
-          <!-- Phone Number Field -->
-          <div>
-            <label 
-              for="phoneNumber" 
-              [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-              class="block text-xs font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300"
-            >
-              {{ t['phoneLabel'][currentLang] }}
-            </label>
-            <div 
-              [ngClass]="{
-                'bg-slate-900/80 border-slate-800 focus-within:border-amber-500 focus-within:ring-amber-500': isDarkMode,
-                'bg-white border-slate-200 focus-within:border-amber-500 focus-within:ring-amber-500 shadow-sm': !isDarkMode,
-                'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500': (bookingForm.get('phoneNumber')?.touched || isSubmitted) && bookingForm.get('phoneNumber')?.invalid
-              }"
-              class="flex rounded-2xl border overflow-hidden focus-within:ring-1 transition-all duration-300"
-            >
-              <span 
-                [ngClass]="isDarkMode ? 'text-slate-400 bg-slate-900 border-slate-800/60' : 'text-slate-500 bg-slate-50 border-slate-200'"
-                class="flex items-center pl-4 pr-2.5 font-bold text-sm select-none border-r transition-colors duration-300"
-              >
-                +885
-              </span>
-              <input 
-                type="tel" 
-                id="phoneNumber" 
-                formControlName="phoneNumber"
-                placeholder="e.g., 99123456"
-                [ngClass]="isDarkMode ? 'text-slate-100 placeholder-slate-600' : 'text-slate-900 placeholder-slate-400'"
-                class="w-full bg-transparent px-3 py-3 focus:outline-none text-sm transition-colors duration-300"
-              />
-            </div>
-            <div *ngIf="(bookingForm.get('phoneNumber')?.touched || isSubmitted) && bookingForm.get('phoneNumber')?.invalid" class="text-xs text-rose-500 mt-1">
-              <span *ngIf="bookingForm.get('phoneNumber')?.errors?.['required']">{{ t['phoneRequired'][currentLang] }}</span>
-              <span *ngIf="bookingForm.get('phoneNumber')?.errors?.['pattern']">{{ t['phonePattern'][currentLang] }}</span>
-            </div>
-          </div>
-
-          <!-- Dates Selection Grid -->
-          <div class="grid grid-cols-2 gap-3">
-            <!-- Rent Date (Start) -->
-            <div>
-              <label 
-                for="rentDate" 
-                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-                class="block text-xs font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300"
-              >
-                {{ t['rentDateLabel'][currentLang] }}
-              </label>
-              <div 
-                (click)="triggerDatePicker(rentDatePicker)"
-                [ngClass]="{
-                  'bg-slate-900/80 border-slate-800 focus-within:border-amber-500 focus-within:ring-amber-500': isDarkMode,
-                  'bg-white border-slate-200 focus-within:border-amber-500 focus-within:ring-amber-500 shadow-sm': !isDarkMode,
-                  'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500': (bookingForm.get('rentDate')?.touched || isSubmitted) && bookingForm.get('rentDate')?.invalid
-                }"
-                class="flex items-center rounded-2xl border overflow-hidden focus-within:ring-1 transition-all duration-300 cursor-pointer"
-              >
-                <span class="pl-3.5 text-slate-500 select-none flex items-center">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                </span>
-                <input 
-                  type="date" 
-                  #rentDatePicker
-                  id="rentDate" 
-                  [min]="minDate"
-                  formControlName="rentDate"
+                  {{ t['leftDateLabel'][currentLang] }}
+                </label>
+                <div 
+                  (click)="triggerDatePicker(leftDatePicker)"
                   [ngClass]="{
-                    'text-slate-100 [color-scheme:dark]': isDarkMode,
-                    'text-slate-900 [color-scheme:light]': !isDarkMode
+                    'bg-slate-900/80 border-slate-800 focus-within:border-amber-500 focus-within:ring-amber-500': isDarkMode,
+                    'bg-white border-slate-200 focus-within:border-amber-500 focus-within:ring-amber-500 shadow-sm': !isDarkMode,
+                    'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500': (bookingForm.get('leftDate')?.touched || isSubmitted) && (bookingForm.get('leftDate')?.invalid || bookingForm.errors?.['invalidRange'])
                   }"
-                  class="relative w-full bg-transparent pl-2 pr-3 py-3 focus:outline-none text-sm cursor-pointer transition-colors duration-300"
-                />
-              </div>
-              <div *ngIf="(bookingForm.get('rentDate')?.touched || isSubmitted) && bookingForm.get('rentDate')?.invalid" class="text-xs text-rose-500 mt-1">
-                <span *ngIf="bookingForm.get('rentDate')?.errors?.['required']">{{ t['required'][currentLang] }}</span>
-                <span *ngIf="bookingForm.get('rentDate')?.errors?.['pastDate']">{{ t['pastDateError'][currentLang] }}</span>
+                  class="flex items-center rounded-2xl border overflow-hidden focus-within:ring-1 transition-all duration-300 cursor-pointer"
+                >
+                  <span class="pl-3.5 text-slate-500 select-none flex items-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </span>
+                  <input 
+                    type="date" 
+                    #leftDatePicker
+                    id="leftDate" 
+                    [min]="bookingForm.get('rentDate')?.value || minDate"
+                    formControlName="leftDate"
+                    [ngClass]="{
+                      'text-slate-100 [color-scheme:dark]': isDarkMode,
+                      'text-slate-900 [color-scheme:light]': !isDarkMode
+                    }"
+                    class="relative w-full bg-transparent pl-2 pr-3 py-3 focus:outline-none text-sm cursor-pointer transition-colors duration-300"
+                  />
+                </div>
+                <div *ngIf="(bookingForm.get('leftDate')?.touched || isSubmitted) && (bookingForm.get('leftDate')?.invalid || bookingForm.errors?.['invalidRange'])" class="text-xs text-rose-500 mt-1">
+                  <span *ngIf="bookingForm.get('leftDate')?.errors?.['required']">{{ t['required'][currentLang] }}</span>
+                  <span *ngIf="bookingForm.errors?.['invalidRange']">{{ t['rangeError'][currentLang] }}</span>
+                </div>
               </div>
             </div>
 
-            <!-- Left Date (End) -->
-            <div>
-              <label 
-                for="leftDate" 
-                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-                class="block text-xs font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300"
-              >
-                {{ t['leftDateLabel'][currentLang] }}
-              </label>
+            <!-- Price Calculation Panel -->
+            <div 
+              *ngIf="selectedRoom && totalDays > 0" 
+              [ngClass]="isDarkMode ? 'border-slate-800' : 'border-slate-200'"
+              class="pt-4 border-t space-y-2 transition-colors duration-300"
+            >
               <div 
-                (click)="triggerDatePicker(leftDatePicker)"
-                [ngClass]="{
-                  'bg-slate-900/80 border-slate-800 focus-within:border-amber-500 focus-within:ring-amber-500': isDarkMode,
-                  'bg-white border-slate-200 focus-within:border-amber-500 focus-within:ring-amber-500 shadow-sm': !isDarkMode,
-                  'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500': (bookingForm.get('leftDate')?.touched || isSubmitted) && (bookingForm.get('leftDate')?.invalid || bookingForm.errors?.['invalidRange'])
-                }"
-                class="flex items-center rounded-2xl border overflow-hidden focus-within:ring-1 transition-all duration-300 cursor-pointer"
+                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                class="flex justify-between text-xs transition-colors duration-300"
               >
-                <span class="pl-3.5 text-slate-500 select-none flex items-center">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>{{ t['durationLabel'][currentLang] }}</span>
+                <span [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'" class="font-bold transition-colors duration-300">
+                  {{ totalDays }} {{ t['daysLabel'][currentLang] }} (~{{ (totalDays / 30).toFixed(1) }} {{ t['monthSuffix'][currentLang] }})
                 </span>
-                <input 
-                  type="date" 
-                  #leftDatePicker
-                  id="leftDate" 
-                  [min]="bookingForm.get('rentDate')?.value || minDate"
-                  formControlName="leftDate"
-                  [ngClass]="{
-                    'text-slate-100 [color-scheme:dark]': isDarkMode,
-                    'text-slate-900 [color-scheme:light]': !isDarkMode
-                  }"
-                  class="relative w-full bg-transparent pl-2 pr-3 py-3 focus:outline-none text-sm cursor-pointer transition-colors duration-300"
-                />
               </div>
-              <div *ngIf="(bookingForm.get('leftDate')?.touched || isSubmitted) && (bookingForm.get('leftDate')?.invalid || bookingForm.errors?.['invalidRange'])" class="text-xs text-rose-500 mt-1">
-                <span *ngIf="bookingForm.get('leftDate')?.errors?.['required']">{{ t['required'][currentLang] }}</span>
-                <span *ngIf="bookingForm.errors?.['invalidRange']">{{ t['rangeError'][currentLang] }}</span>
+              <div 
+                [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+                class="flex justify-between text-xs transition-colors duration-300"
+              >
+                <span>{{ t['rateLabel'][currentLang] }}</span>
+                <span [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'" class="font-bold transition-colors duration-300">
+                  ${{ selectedRoom?.price }} / {{ t['monthSuffix'][currentLang] }}
+                </span>
+              </div>
+              <div 
+                [ngClass]="isDarkMode ? 'border-slate-800 text-slate-100' : 'border-slate-200 text-slate-800'"
+                class="flex justify-between items-center text-sm pt-2 font-bold border-t border-dashed transition-all duration-300"
+              >
+                <span>{{ t['estimatedCost'][currentLang] }}</span>
+                <span [ngClass]="isDarkMode ? 'text-amber-500' : 'text-amber-700'" class="text-xl transition-colors duration-300 font-extrabold">${{ totalPrice }}</span>
               </div>
             </div>
-          </div>
 
-          <!-- Price Calculation Panel -->
-          <div 
-            *ngIf="selectedRoom && totalDays > 0" 
-            [ngClass]="isDarkMode ? 'border-slate-800' : 'border-slate-200'"
-            class="pt-4 border-t space-y-2 transition-colors duration-300"
-          >
-            <div 
-              [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-              class="flex justify-between text-xs transition-colors duration-300"
+            <!-- Submit Button -->
+            <button 
+              type="submit" 
+              class="w-full mt-2 bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-400 hover:to-orange-300 text-slate-950 font-bold py-3.5 px-4 rounded-2xl transition duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-amber-500/10 focus:outline-none"
             >
-              <span>{{ t['durationLabel'][currentLang] }}</span>
-              <span [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'" class="font-bold transition-colors duration-300">
-                {{ totalDays }} {{ t['daysLabel'][currentLang] }} (~{{ (totalDays / 30).toFixed(1) }} {{ t['monthSuffix'][currentLang] }})
-              </span>
-            </div>
-            <div 
-              [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
-              class="flex justify-between text-xs transition-colors duration-300"
-            >
-              <span>{{ t['rateLabel'][currentLang] }}</span>
-              <span [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'" class="font-bold transition-colors duration-300">
-                ${{ selectedRoom?.price }} / {{ t['monthSuffix'][currentLang] }}
-              </span>
-            </div>
-            <div 
-              [ngClass]="isDarkMode ? 'border-slate-800 text-slate-100' : 'border-slate-200 text-slate-800'"
-              class="flex justify-between items-center text-sm pt-2 font-bold border-t border-dashed transition-all duration-300"
-            >
-              <span>{{ t['estimatedCost'][currentLang] }}</span>
-              <span [ngClass]="isDarkMode ? 'text-amber-500' : 'text-amber-700'" class="text-xl transition-colors duration-300 font-extrabold">${{ totalPrice }}</span>
-            </div>
-          </div>
+              {{ t['submitButton'][currentLang] }}
+            </button>
+          </form>
+        </div>
 
-          <!-- Submit Button -->
-          <button 
-            type="submit" 
-            class="w-full mt-2 bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-400 hover:to-orange-300 text-slate-950 font-bold py-3.5 px-4 rounded-2xl transition duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-amber-500/10 focus:outline-none"
-          >
-            {{ t['submitButton'][currentLang] }}
-          </button>
-        </form>
       </div>
+    </ng-container>
 
-    </div>
+    <!-- Booking Success View -->
+    <div 
+      *ngIf="showSuccessView && lastBooking" 
+      class="max-w-xl mx-auto p-8 rounded-3xl border transition-all duration-300"
+      [ngClass]="isDarkMode ? 'bg-gradient-to-b from-slate-900 to-slate-950 border-slate-800' : 'from-white to-slate-50 border-slate-200 shadow-2xl'"
+    >
+      <div class="text-center space-y-6">
+        
+        <!-- Glowing Success Circle -->
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10 animate-bounce">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+
+        <div class="space-y-2">
+          <h2 class="text-2xl sm:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-400">
+            {{ t['bookingSuccess'][currentLang] }}
+          </h2>
+          <span 
+            [ngClass]="isDarkMode ? 'bg-orange-500/15 text-orange-400 border-orange-500/30' : 'bg-orange-50 text-orange-700 border-orange-200'"
+            class="px-3 py-1 rounded-xl border text-xs font-bold uppercase tracking-wider inline-block"
+          >
+            {{ t['successTitle'][currentLang] }}
+          </span>
+        </div>
+
+        <!-- Receipt Card -->
+        <div 
+          [ngClass]="isDarkMode ? 'bg-slate-950/80 border-slate-900/60' : 'bg-slate-100/60 border-slate-200'"
+          class="rounded-2xl border p-6 text-left space-y-4 text-xs font-semibold"
+        >
+          <div class="flex justify-between items-center border-b pb-3 border-dashed border-slate-800/30">
+            <span class="text-slate-500 font-bold uppercase tracking-widest">{{ t['successSummary'][currentLang] }}</span>
+            <span class="font-mono text-xs text-amber-500 font-black">{{ t['successRef'][currentLang] }}: {{ lastBooking.id }}</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-slate-500">{{ t['roomLabel'][currentLang] }}</span>
+              <span class="font-bold text-sm" [ngClass]="isDarkMode ? 'text-white' : 'text-slate-800'">
+                #{{ lastBooking.roomNumber }} ({{ t[lastBooking.roomType][currentLang] }})
+              </span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-slate-500">{{ t['rateLabel'][currentLang] }}</span>
+              <span class="font-bold" [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'">${{ lastBooking.price }} / {{ t['monthSuffix'][currentLang] }}</span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-slate-500">{{ t['rentDateLabel'][currentLang] }} / {{ t['leftDateLabel'][currentLang] }}</span>
+              <span class="font-bold" [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'">
+                {{ lastBooking.rentDate | date:'mediumDate' }} - {{ lastBooking.leftDate | date:'mediumDate' }}
+              </span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-slate-500">{{ t['durationLabel'][currentLang] }}</span>
+              <span class="font-bold text-amber-500">{{ lastBooking.totalDays }} {{ t['daysLabel'][currentLang] }}</span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-slate-500">{{ t['phoneLabel'][currentLang] }}</span>
+              <span class="font-bold" [ngClass]="isDarkMode ? 'text-slate-200' : 'text-slate-800'">{{ lastBooking.phoneNumber }}</span>
+            </div>
+
+            <div class="flex justify-between items-center pt-3 border-t border-dashed border-slate-800/30 font-bold text-sm">
+              <span class="text-slate-500">{{ t['estimatedCost'][currentLang] }}</span>
+              <span class="text-lg font-black text-amber-500">${{ lastBooking.totalPrice }}</span>
+            </div>
+          </div>
+        </div>
+
+        <p 
+          [ngClass]="isDarkMode ? 'text-slate-400' : 'text-slate-600'"
+          class="text-xs transition-colors duration-300 px-2 leading-relaxed"
+        >
+          {{ t['successNote'][currentLang] }}
+        </p>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+          <button 
+            type="button" 
+            (click)="resetBookingForm()" 
+            class="flex-1 bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-400 hover:to-orange-300 text-slate-950 font-bold py-3.5 px-4 rounded-2xl transition duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-amber-500/10 focus:outline-none"
+          >
+            {{ t['bookAnother'][currentLang] }}
+          </button>
+          
+          <a 
+            routerLink="/dashboard"
+            [ngClass]="isDarkMode ? 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white' : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900 shadow-sm'"
+            class="flex-1 font-bold py-3.5 px-4 rounded-2xl transition duration-300 hover:scale-[1.01] border text-center flex items-center justify-center gap-1.5"
+          >
+            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            {{ t['goToDashboard'][currentLang] }}
+          </a>
+        </div>
+
+      </div>
   </div>
 </div>

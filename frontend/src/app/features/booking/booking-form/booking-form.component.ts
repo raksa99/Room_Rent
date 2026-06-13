@@ -42,6 +42,8 @@ export class BookingFormComponent implements OnInit {
   totalPrice: number = 0;
   totalDays: number = 0;
   isSubmitted = false;
+  showSuccessView = false;
+  lastBooking: any = null;
 
   // Camera & Image Import States
   showCamera = false;
@@ -196,6 +198,34 @@ export class BookingFormComponent implements OnInit {
     submitButton: {
       en: 'Submit Booking Request',
       kh: 'ដាក់ស្នើការស្នើសុំកក់'
+    },
+    bookingSuccess: {
+      en: 'Booking Request Submitted Successfully!',
+      kh: 'បានដាក់ស្នើសុំកក់បន្ទប់ដោយជោគជ័យ!'
+    },
+    successTitle: {
+      en: 'Booking Confirmed (Pending Review)',
+      kh: 'ការកក់បន្ទប់ត្រូវបានកក់ (រង់ចាំការពិនិត្យ)'
+    },
+    successRef: {
+      en: 'Reference ID',
+      kh: 'លេខយោងបន្ទប់'
+    },
+    successSummary: {
+      en: 'Receipt & Booking Summary',
+      kh: 'វិក្កយបត្រ & សេចក្តីសង្ខេបនៃការកក់'
+    },
+    successNote: {
+      en: 'Please keep this receipt for your reference. An administrator will review your booking request and contact you shortly.',
+      kh: 'សូមរក្សាទុកវិក្កយបត្រនេះសម្រាប់ជាឯកសារយោង។ ភ្នាក់ងាររដ្ឋបាលនឹងពិនិត្យសំណើកក់បន្ទប់របស់អ្នក និងទាក់ទងទៅអ្នកក្នុងពេលឆាប់ៗ។'
+    },
+    bookAnother: {
+      en: 'Book Another Room',
+      kh: 'កក់បន្ទប់ផ្សេងទៀត'
+    },
+    goToDashboard: {
+      en: 'Go to Admin Dashboard',
+      kh: 'ទៅកាន់ផ្ទាំងគ្រប់គ្រងរដ្ឋបាល'
     }
   };
 
@@ -250,6 +280,13 @@ export class BookingFormComponent implements OnInit {
   }
 
   loadRooms(): void {
+    if (typeof localStorage !== 'undefined') {
+      const savedRooms = localStorage.getItem('rooms');
+      if (savedRooms) {
+        this.rooms = JSON.parse(savedRooms);
+        return;
+      }
+    }
     // Generate Room 1 to 27
     const generatedRooms: Room[] = [];
     for (let i = 1; i <= 27; i++) {
@@ -281,6 +318,9 @@ export class BookingFormComponent implements OnInit {
       });
     }
     this.rooms = generatedRooms;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('rooms', JSON.stringify(this.rooms));
+    }
   }
 
   setMinDate(): void {
@@ -412,11 +452,69 @@ export class BookingFormComponent implements OnInit {
     if (this.bookingForm.invalid) {
       return;
     }
-    const submissionData = {
-      ...this.bookingForm.value,
-      phoneNumber: '+885' + this.bookingForm.value.phoneNumber
+    
+    const formVal = this.bookingForm.value;
+    const refId = 'RR-' + Math.floor(100000 + Math.random() * 900000);
+    const rentDate = formVal.rentDate;
+    const leftDate = formVal.leftDate;
+    const phone = '+885' + formVal.phoneNumber;
+    
+    // Create new booking
+    const newBooking = {
+      id: refId,
+      roomNumber: this.selectedRoom?.roomNumber,
+      roomType: this.selectedRoom?.type,
+      price: this.selectedRoom?.price,
+      phoneNumber: phone,
+      rentDate: rentDate,
+      leftDate: leftDate,
+      totalDays: this.totalDays,
+      totalPrice: this.totalPrice,
+      nationalIdImage: this.idCardImagePreview || formVal.nationalIdImage,
+      status: 'PENDING',
+      createdAt: new Date().toISOString()
     };
-    console.log('Booking form submitted data:', submissionData);
+
+    // Save Booking to LocalStorage
+    if (typeof localStorage !== 'undefined') {
+      const savedBookings = localStorage.getItem('bookings');
+      const bookingsList = savedBookings ? JSON.parse(savedBookings) : [];
+      bookingsList.unshift(newBooking);
+      localStorage.setItem('bookings', JSON.stringify(bookingsList));
+
+      // Mark the Room as BOOKED
+      if (this.selectedRoom) {
+        this.selectedRoom.status = 'BOOKED';
+        const roomIndex = this.rooms.findIndex(r => r.id === this.selectedRoom?.id);
+        if (roomIndex !== -1) {
+          this.rooms[roomIndex].status = 'BOOKED';
+        }
+        localStorage.setItem('rooms', JSON.stringify(this.rooms));
+      }
+    }
+
+    // Set view state
+    this.lastBooking = newBooking;
+    this.showSuccessView = true;
+  }
+
+  resetBookingForm(): void {
+    this.bookingForm.reset();
+    this.bookingForm.patchValue({
+      roomId: '',
+      phoneNumber: '',
+      rentDate: '',
+      leftDate: '',
+      nationalIdImage: ''
+    });
+    this.selectedRoom = null;
+    this.idCardImagePreview = null;
+    this.totalDays = 0;
+    this.totalPrice = 0;
+    this.isSubmitted = false;
+    this.showSuccessView = false;
+    this.lastBooking = null;
+    this.loadRooms();
   }
 
   triggerDatePicker(picker: HTMLInputElement): void {

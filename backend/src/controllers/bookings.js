@@ -137,10 +137,127 @@ const getMyBookings = async (req, res) => {
   }
 };
 
+const updateBookingStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid booking status' });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      // Offline fallback
+      const booking = mockBookings.find(b => b._id === id);
+      if (!booking) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      booking.status = status;
+
+      // Sync room status if needed
+      if (booking.room && booking.room._id) {
+        const room = roomsController.mockRooms.find(r => r._id === booking.room._id);
+        if (room) {
+          if (status === 'CONFIRMED') {
+            room.status = 'BOOKED';
+          } else if (status === 'CANCELLED') {
+            room.status = 'AVAILABLE';
+          }
+        }
+      }
+
+      return res.status(200).json({
+        message: 'Booking status updated successfully (Mock mode)',
+        booking
+      });
+    }
+
+    // Normal DB mode
+    const booking = await Booking.findById(id).populate('room');
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    booking.status = status;
+    await booking.save();
+
+    if (booking.room) {
+      const room = await Room.findById(booking.room._id);
+      if (room) {
+        if (status === 'CONFIRMED') {
+          room.status = 'BOOKED';
+        } else if (status === 'CANCELLED') {
+          room.status = 'AVAILABLE';
+        }
+        await room.save();
+      }
+    }
+
+    res.status(200).json({
+      message: 'Booking status updated successfully',
+      booking
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (mongoose.connection.readyState !== 1) {
+      // Offline fallback
+      const index = mockBookings.findIndex(b => b._id === id);
+      if (index === -1) {
+        return res.status(404).json({ error: 'Booking not found' });
+      }
+
+      const booking = mockBookings[index];
+      // Free the room if it was PENDING or CONFIRMED
+      if (booking.status === 'CONFIRMED' || booking.status === 'PENDING') {
+        if (booking.room && booking.room._id) {
+          const room = roomsController.mockRooms.find(r => r._id === booking.room._id);
+          if (room) {
+            room.status = 'AVAILABLE';
+          }
+        }
+      }
+
+      mockBookings.splice(index, 1);
+      return res.status(200).json({ message: 'Booking deleted successfully (Mock mode)' });
+    }
+
+    // Normal DB mode
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    // Free the room if it was PENDING or CONFIRMED
+    if (booking.status === 'CONFIRMED' || booking.status === 'PENDING') {
+      const room = await Room.findById(booking.room);
+      if (room) {
+        room.status = 'AVAILABLE';
+        await room.save();
+      }
+    }
+
+    await Booking.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Booking deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createBooking,
   getAllBookings,
   getMyBookings,
+  updateBookingStatus,
+  deleteBooking,
   mockBookings,
   mockPayments
 };
+

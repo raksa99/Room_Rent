@@ -21,9 +21,12 @@ router.get('/rooms/available', roomsController.getAvailableRooms);
 router.put('/rooms/:id/status', authenticateToken, isAdmin, roomsController.updateRoomStatus);
 
 // Bookings Routes
-router.post('/bookings', authenticateToken, bookingsController.createBooking);
+router.post('/bookings', bookingsController.createBooking);
 router.get('/bookings/admin', authenticateToken, isAdmin, bookingsController.getAllBookings);
 router.get('/bookings/my', authenticateToken, bookingsController.getMyBookings);
+router.put('/bookings/:id/status', authenticateToken, isAdmin, bookingsController.updateBookingStatus);
+router.delete('/bookings/:id', authenticateToken, isAdmin, bookingsController.deleteBooking);
+
 
 // Payments Routes
 router.get('/payments', authenticateToken, isAdmin, paymentsController.getAllPayments);

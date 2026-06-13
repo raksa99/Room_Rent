@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ApiService } from '../../../core/services/api.service';
+
 
 interface Room {
   id: string;
@@ -198,11 +200,22 @@ export class DashboardComponent implements OnInit {
     }
   };
 
+  constructor(private apiService: ApiService) {}
+
   ngOnInit(): void {
     this.loadPreferences();
-    this.loadRooms();
-    this.loadBookings();
-    this.calculateStats();
+    this.apiService.autoLoginAdmin().subscribe({
+      next: () => {
+        this.loadRooms();
+        this.loadBookings();
+      },
+      error: (err) => {
+        console.error('Failed to auto-authenticate admin:', err);
+        this.loadRoomsOffline();
+        this.loadBookingsOffline();
+        this.calculateStats();
+      }
+    });
   }
 
   loadPreferences(): void {
@@ -233,55 +246,113 @@ export class DashboardComponent implements OnInit {
   }
 
   loadRooms(): void {
+    this.apiService.getAllRooms().subscribe({
+      next: (rooms) => {
+        this.rooms = rooms.map((r: any) => ({
+          id: r._id,
+          roomNumber: r.roomNumber,
+          type: r.roomType || 'Standard',
+          price: r.pricePerMonth || 150,
+          status: r.status || 'AVAILABLE'
+        }));
+        // Update selectedRoom if currently matching
+        if (this.selectedRoom) {
+          const matched = this.rooms.find(r => r.roomNumber === this.selectedRoom?.roomNumber);
+          this.selectedRoom = matched || null;
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load rooms from API:', err);
+        this.loadRoomsOffline();
+      }
+    });
+  }
+
+  loadRoomsOffline(): void {
     if (typeof localStorage !== 'undefined') {
       const savedRooms = localStorage.getItem('rooms');
       if (savedRooms) {
         this.rooms = JSON.parse(savedRooms);
-      } else {
-        // Generate Default Rooms (Rooms 1 to 27)
-        const generatedRooms: Room[] = [];
-        for (let i = 1; i <= 27; i++) {
-          let roomType = 'Standard';
-          let price = 150;
-          let status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' = 'AVAILABLE';
-          
-          if (i === 3 || i === 12 || i === 22) {
-            status = 'BOOKED';
-          } else if (i === 5 || i === 15) {
-            status = 'MAINTENANCE';
-          }
-
-          if (i >= 10 && i <= 18) {
-            roomType = 'Deluxe';
-            price = 200;
-          } else if (i >= 19) {
-            roomType = 'Premium';
-            price = 250;
-          }
-
-          generatedRooms.push({
-            id: `mock-id-${i}`,
-            roomNumber: i,
-            type: roomType,
-            price: price,
-            status: status
-          });
-        }
-        this.rooms = generatedRooms;
-        localStorage.setItem('rooms', JSON.stringify(this.rooms));
+        return;
       }
     }
+    const generatedRooms: Room[] = [];
+    for (let i = 1; i <= 27; i++) {
+      let roomType = 'Standard';
+      let price = 150;
+      let status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' = 'AVAILABLE';
+      
+      if (i === 3 || i === 12 || i === 22) {
+        status = 'BOOKED';
+      } else if (i === 5 || i === 15) {
+        status = 'MAINTENANCE';
+      }
+
+      if (i >= 10 && i <= 18) {
+        roomType = 'Deluxe';
+        price = 200;
+      } else if (i >= 19) {
+        roomType = 'Premium';
+        price = 250;
+      }
+
+      generatedRooms.push({
+        id: `mock-id-${i}`,
+        roomNumber: i,
+        type: roomType,
+        price: price,
+        status: status
+      });
+    }
+    this.rooms = generatedRooms;
+    this.saveRoomsOffline();
   }
 
   loadBookings(): void {
+    this.apiService.getAllBookings().subscribe({
+      next: (bookings) => {
+        this.bookings = bookings.map((b: any) => {
+          const start = new Date(b.rentDate);
+          const end = new Date(b.leftDate);
+          const diffTime = Math.abs(end.getTime() - start.getTime());
+          const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 0;
+          const price = b.room ? (b.room.pricePerMonth || 150) : 150;
+          const totalPrice = Math.round((totalDays / 30) * price * 100) / 100 || 0;
+
+          return {
+            id: b._id,
+            roomNumber: b.room ? b.room.roomNumber : 0,
+            roomType: b.room ? (b.room.roomType || 'Standard') : 'Standard',
+            price: price,
+            phoneNumber: b.phoneNumber,
+            rentDate: b.rentDate,
+            leftDate: b.leftDate,
+            totalDays: totalDays,
+            totalPrice: totalPrice,
+            nationalIdImage: b.nationalId,
+            status: b.status,
+            createdAt: b.createdAt
+          };
+        });
+        this.calculateStats();
+      },
+      error: (err) => {
+        console.error('Failed to load bookings from API:', err);
+        this.loadBookingsOffline();
+        this.calculateStats();
+      }
+    });
+  }
+
+  loadBookingsOffline(): void {
     if (typeof localStorage !== 'undefined') {
       const savedBookings = localStorage.getItem('bookings');
       if (savedBookings) {
         this.bookings = JSON.parse(savedBookings);
-      } else {
-        this.bookings = [];
+        return;
       }
     }
+    this.bookings = [];
   }
 
   calculateStats(): void {
@@ -300,69 +371,111 @@ export class DashboardComponent implements OnInit {
   updateRoomStatusOverride(status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE'): void {
     if (!this.selectedRoom) return;
 
-    this.selectedRoom.status = status;
-    const index = this.rooms.findIndex(r => r.id === this.selectedRoom?.id);
-    if (index !== -1) {
-      this.rooms[index].status = status;
-      this.saveRooms();
-    }
+    const roomId = this.selectedRoom.id;
+    this.apiService.updateRoomStatus(roomId, status).subscribe({
+      next: () => {
+        if (this.selectedRoom) {
+          this.selectedRoom.status = status;
+        }
+        const index = this.rooms.findIndex(r => r.id === roomId);
+        if (index !== -1) {
+          this.rooms[index].status = status;
+        }
+        this.saveRoomsOffline();
+      },
+      error: (err) => {
+        console.error('Failed to update room status override:', err);
+        // Fallback local update
+        if (this.selectedRoom) {
+          this.selectedRoom.status = status;
+        }
+        const index = this.rooms.findIndex(r => r.id === roomId);
+        if (index !== -1) {
+          this.rooms[index].status = status;
+          this.saveRoomsOffline();
+        }
+      }
+    });
   }
 
   confirmBooking(booking: Booking): void {
-    booking.status = 'CONFIRMED';
-    
-    // Update matching room to BOOKED
-    const roomIndex = this.rooms.findIndex(r => r.roomNumber === booking.roomNumber);
-    if (roomIndex !== -1) {
-      this.rooms[roomIndex].status = 'BOOKED';
-      this.saveRooms();
-    }
-
-    this.saveBookings();
-    this.calculateStats();
+    this.apiService.updateBookingStatus(booking.id, 'CONFIRMED').subscribe({
+      next: () => {
+        booking.status = 'CONFIRMED';
+        this.loadRooms();
+        this.loadBookings();
+      },
+      error: (err) => {
+        console.error('Failed to confirm booking via API:', err);
+        booking.status = 'CONFIRMED';
+        const roomIndex = this.rooms.findIndex(r => r.roomNumber === booking.roomNumber);
+        if (roomIndex !== -1) {
+          this.rooms[roomIndex].status = 'BOOKED';
+          this.saveRoomsOffline();
+        }
+        this.saveBookingsOffline();
+        this.calculateStats();
+      }
+    });
   }
 
   cancelBooking(booking: Booking): void {
-    booking.status = 'CANCELLED';
-
-    // Update matching room back to AVAILABLE
-    const roomIndex = this.rooms.findIndex(r => r.roomNumber === booking.roomNumber);
-    if (roomIndex !== -1) {
-      this.rooms[roomIndex].status = 'AVAILABLE';
-      this.saveRooms();
-    }
-
-    this.saveBookings();
-    this.calculateStats();
+    this.apiService.updateBookingStatus(booking.id, 'CANCELLED').subscribe({
+      next: () => {
+        booking.status = 'CANCELLED';
+        this.loadRooms();
+        this.loadBookings();
+      },
+      error: (err) => {
+        console.error('Failed to cancel booking via API:', err);
+        booking.status = 'CANCELLED';
+        const roomIndex = this.rooms.findIndex(r => r.roomNumber === booking.roomNumber);
+        if (roomIndex !== -1) {
+          this.rooms[roomIndex].status = 'AVAILABLE';
+          this.saveRoomsOffline();
+        }
+        this.saveBookingsOffline();
+        this.calculateStats();
+      }
+    });
   }
 
   deleteBooking(bookingId: string): void {
-    const booking = this.bookings.find(b => b.id === bookingId);
-    if (booking && (booking.status === 'CONFIRMED' || booking.status === 'PENDING')) {
-      // Free the room
-      const roomIndex = this.rooms.findIndex(r => r.roomNumber === booking.roomNumber);
-      if (roomIndex !== -1) {
-        this.rooms[roomIndex].status = 'AVAILABLE';
-        this.saveRooms();
+    this.apiService.deleteBooking(bookingId).subscribe({
+      next: () => {
+        this.bookings = this.bookings.filter(b => b.id !== bookingId);
+        this.loadRooms();
+        this.calculateStats();
+      },
+      error: (err) => {
+        console.error('Failed to delete booking via API:', err);
+        const booking = this.bookings.find(b => b.id === bookingId);
+        if (booking && (booking.status === 'CONFIRMED' || booking.status === 'PENDING')) {
+          const roomIndex = this.rooms.findIndex(r => r.roomNumber === booking.roomNumber);
+          if (roomIndex !== -1) {
+            this.rooms[roomIndex].status = 'AVAILABLE';
+            this.saveRoomsOffline();
+          }
+        }
+        this.bookings = this.bookings.filter(b => b.id !== bookingId);
+        this.saveBookingsOffline();
+        this.calculateStats();
       }
-    }
-
-    this.bookings = this.bookings.filter(b => b.id !== bookingId);
-    this.saveBookings();
-    this.calculateStats();
+    });
   }
 
-  saveRooms(): void {
+  saveRoomsOffline(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('rooms', JSON.stringify(this.rooms));
     }
   }
 
-  saveBookings(): void {
+  saveBookingsOffline(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('bookings', JSON.stringify(this.bookings));
     }
   }
+
 
   openIdModal(imageUrl: string): void {
     this.selectedIdImage = imageUrl;

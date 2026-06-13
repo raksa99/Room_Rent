@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ApiService } from '../../../core/services/api.service';
 
 interface Room {
   id: string; // Mongo ObjectId in production
@@ -229,7 +230,7 @@ export class BookingFormComponent implements OnInit {
     }
   };
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private apiService: ApiService) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -280,6 +281,31 @@ export class BookingFormComponent implements OnInit {
   }
 
   loadRooms(): void {
+    this.apiService.getAvailableRooms().subscribe({
+      next: (rooms) => {
+        // Map backend Room schema (pricePerMonth, roomType) to frontend schema (price, type, id)
+        this.rooms = rooms.map((r: any) => ({
+          id: r._id,
+          roomNumber: r.roomNumber,
+          type: r.roomType,
+          price: r.pricePerMonth,
+          status: r.status
+        }));
+        // Seed default selectedRoom if it was cleared
+        if (this.selectedRoom) {
+          const matched = this.rooms.find(r => r.roomNumber === this.selectedRoom?.roomNumber);
+          this.selectedRoom = matched || null;
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load available rooms from API:', err);
+        // Fallback to local storage or mock generation
+        this.loadRoomsOfflineFallback();
+      }
+    });
+  }
+
+  loadRoomsOfflineFallback(): void {
     if (typeof localStorage !== 'undefined') {
       const savedRooms = localStorage.getItem('rooms');
       if (savedRooms) {
@@ -454,20 +480,65 @@ export class BookingFormComponent implements OnInit {
     }
     
     const formVal = this.bookingForm.value;
-    const refId = 'RR-' + Math.floor(100000 + Math.random() * 900000);
-    const rentDate = formVal.rentDate;
-    const leftDate = formVal.leftDate;
     const phone = '+885' + formVal.phoneNumber;
     
-    // Create new booking
+    const bookingPayload = {
+      roomId: formVal.roomId,
+      nationalId: formVal.nationalIdImage,
+      phoneNumber: phone,
+      rentDate: formVal.rentDate,
+      leftDate: formVal.leftDate
+    };
+
+    this.apiService.createBooking(bookingPayload).subscribe({
+      next: (res) => {
+        const newBooking = {
+          id: res.booking._id || 'RR-' + Math.floor(100000 + Math.random() * 900000),
+          roomNumber: this.selectedRoom?.roomNumber,
+          roomType: this.selectedRoom?.type,
+          price: this.selectedRoom?.price,
+          phoneNumber: phone,
+          rentDate: formVal.rentDate,
+          leftDate: formVal.leftDate,
+          totalDays: this.totalDays,
+          totalPrice: res.estimatedCost || this.totalPrice,
+          nationalIdImage: formVal.nationalIdImage,
+          status: res.booking.status || 'PENDING',
+          createdAt: res.booking.createdAt || new Date().toISOString()
+        };
+
+        // Sync with local storage
+        if (typeof localStorage !== 'undefined') {
+          const savedBookings = localStorage.getItem('bookings');
+          const bookingsList = savedBookings ? JSON.parse(savedBookings) : [];
+          bookingsList.unshift(newBooking);
+          localStorage.setItem('bookings', JSON.stringify(bookingsList));
+        }
+
+        this.lastBooking = newBooking;
+        this.showSuccessView = true;
+      },
+      error: (err) => {
+        console.error('API booking submission failed:', err);
+        alert('API submission failed. Submitting offline fallback...');
+        this.submitOfflineFallback();
+      }
+    });
+  }
+
+  submitOfflineFallback(): void {
+    const formVal = this.bookingForm.value;
+    const refId = 'RR-' + Math.floor(100000 + Math.random() * 900000);
+    const phone = '+885' + formVal.phoneNumber;
+    
     const newBooking = {
       id: refId,
       roomNumber: this.selectedRoom?.roomNumber,
       roomType: this.selectedRoom?.type,
       price: this.selectedRoom?.price,
       phoneNumber: phone,
-      rentDate: rentDate,
-      leftDate: leftDate,
+      rentDate: formVal.rentDate,
+      leftDate: formVal.leftDate,
       totalDays: this.totalDays,
       totalPrice: this.totalPrice,
       nationalIdImage: this.idCardImagePreview || formVal.nationalIdImage,
@@ -475,14 +546,12 @@ export class BookingFormComponent implements OnInit {
       createdAt: new Date().toISOString()
     };
 
-    // Save Booking to LocalStorage
     if (typeof localStorage !== 'undefined') {
       const savedBookings = localStorage.getItem('bookings');
       const bookingsList = savedBookings ? JSON.parse(savedBookings) : [];
       bookingsList.unshift(newBooking);
       localStorage.setItem('bookings', JSON.stringify(bookingsList));
 
-      // Mark the Room as BOOKED
       if (this.selectedRoom) {
         this.selectedRoom.status = 'BOOKED';
         const roomIndex = this.rooms.findIndex(r => r.id === this.selectedRoom?.id);
@@ -493,7 +562,6 @@ export class BookingFormComponent implements OnInit {
       }
     }
 
-    // Set view state
     this.lastBooking = newBooking;
     this.showSuccessView = true;
   }

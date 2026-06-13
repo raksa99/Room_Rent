@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/room-rental-frontend",
+  "outputDirectory": "dist/room-rental-frontend/browser",
   "cleanUrls": true,
   "rewrites": [
     {
